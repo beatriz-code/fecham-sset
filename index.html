@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Operação Última Chance - Fecha Mês</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#fff7ed',
+                            100: '#ffedd5',
+                            500: '#f97316',
+                            600: '#ea580c',
+                            700: '#c2410c',
+                            900: '#7c2d12',
+                        },
+                        amberGold: '#f59e0b',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass-card {
+            background: rgba(18, 18, 20, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glow-orange {
+            box-shadow: 0 0 25px -5px rgba(249, 115, 22, 0.45);
+        }
+        .glow-amber {
+            box-shadow: 0 0 25px -5px rgba(245, 158, 11, 0.3);
+        }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #000000; }
+        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #f97316; }
+    </style>
+</head>
+<body class="bg-black text-zinc-100 min-h-screen flex flex-col antialiased selection:bg-orange-600 selection:text-white">
+
+    <!-- Top Urgent Header Banner -->
+    <header class="sticky top-0 z-50 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800/80 shadow-2xl">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                
+                <!-- Campaign Branding & G30 Logo -->
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center justify-center p-1.5 rounded-xl bg-zinc-900 border border-zinc-800 shadow-md">
+                        <img src="https://raw.githubusercontent.com/G30IA/calendarg30/7d28818d56a083747954bcda3210caabfe50a08f/logog30.png" 
+                             alt="G30 Logo" 
+                             class="h-9 w-auto object-contain"
+                             onerror="this.onerror=null; this.src='https://placehold.co/120x40/000000/f97316?text=G30';">
+                    </div>
+                    <div class="h-8 w-px bg-zinc-800 hidden sm:block"></div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-0.5 text-xs font-bold bg-orange-500/20 text-orange-400 rounded-full border border-orange-500/30 uppercase tracking-widest">Ação Comercial G30</span>
+                            <span class="text-xs text-zinc-400 font-medium">29 Set a 01 Out</span>
+                        </div>
+                        <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight bg-gradient-to-r from-white via-zinc-100 to-orange-500 bg-clip-text text-transparent">
+                            OPERAÇÃO ÚLTIMA CHANCE
+                        </h1>
+                    </div>
+                </div>
+
+                <!-- Motto & Slogan -->
+                <div class="hidden xl:block text-center px-4 py-1.5 rounded-lg bg-zinc-900/80 border border-zinc-800">
+                    <p class="text-xs text-zinc-400 font-semibold uppercase tracking-wider">Lema do Comercial</p>
+                    <p class="text-sm font-bold text-orange-400 italic">"O mês só termina quando o último lead for trabalhado! 🚀"</p>
+                </div>
+
+                <!-- Countdown & Live Indicator -->
+                <div class="flex items-center gap-4">
+                    <div class="text-right">
+                        <div class="flex items-center justify-end gap-1.5 text-xs font-bold text-orange-400 uppercase tracking-wider">
+                            <span class="w-2 h-2 rounded-full bg-orange-500 animate-ping"></span>
+                            Tempo Restante no Mês
+                        </div>
+                        <div id="countdown" class="text-lg sm:text-xl font-mono font-black text-orange-400">
+                            00d 00h 00m 00s
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="bg-zinc-950 border-b border-zinc-800/80 sticky top-[73px] z-40 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex space-x-1 sm:space-x-4 overflow-x-auto py-2 no-scrollbar">
+                <button onclick="switchTab('tab-placar')" id="btn-tab-placar" class="tab-btn px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition flex items-center gap-2 bg-orange-600 text-white shadow-lg glow-orange">
+                    <i class="fa-solid fa-trophy text-amber-400"></i> Regras & Pontuação
+                </button>
+                <button onclick="switchTab('tab-diad')" id="btn-tab-diad" class="tab-btn px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition flex items-center gap-2 text-zinc-400 hover:text-white hover:bg-zinc-900">
+                    <i class="fa-solid fa-bolt text-orange-400"></i> Dia D & Live (01/10)
+                </button>
+                <button onclick="switchTab('tab-plano')" id="btn-tab-plano" class="tab-btn px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition flex items-center gap-2 text-zinc-400 hover:text-white hover:bg-zinc-900">
+                    <i class="fa-solid fa-list-check text-orange-300"></i> Plano de Ação (4 Pilares)
+                </button>
+                <button onclick="switchTab('tab-scripts')" id="btn-tab-scripts" class="tab-btn px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition flex items-center gap-2 text-zinc-400 hover:text-white hover:bg-zinc-900">
+                    <i class="fa-solid fa-comment-dots text-emerald-400"></i> Scripts de Abordagem
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
+
+        <!-- TAB 1: REGRAS & PONTUAÇÃO -->
+        <section id="tab-placar" class="tab-content space-y-6">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Campaign Structure & Guidelines -->
+                <div class="lg:col-span-2 glass-card p-6 rounded-2xl border border-zinc-800 space-y-5">
+                    <div class="pb-3 border-b border-zinc-800">
+                        <span class="px-2.5 py-1 text-xs font-bold bg-orange-500/20 text-orange-400 rounded-lg border border-orange-500/30 uppercase tracking-widest">
+                            Regras Gerais do Placar
+                        </span>
+                        <h2 class="text-2xl font-black text-white mt-2 flex items-center gap-2">
+                            🏆 Sistema de Gamificação Comercial
+                        </h2>
+                        <p class="text-xs text-zinc-400 mt-1">
+                            O placar oficial da campanha deve ficar exposto na TV da loja ou atualizado no grupo interno 2 vezes ao dia (meio-dia e encerramento).
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="p-4 rounded-xl bg-zinc-950/80 border border-zinc-800 space-y-2">
+                            <div class="flex items-center gap-2 font-bold text-orange-400 text-sm">
+                                <i class="fa-solid fa-clock"></i> Atualização Contínua
+                            </div>
+                            <p class="text-xs text-zinc-300 leading-relaxed">
+                                Cada ação validada pelo supervisor soma pontos imediatamente para o vendedor.
+                            </p>
+                        </div>
+                        <div class="p-4 rounded-xl bg-zinc-950/80 border border-zinc-800 space-y-2">
+                            <div class="flex items-center gap-2 font-bold text-orange-400 text-sm">
+                                <i class="fa-solid fa-bullseye"></i> Foco no Funil Completo
+                            </div>
+                            <p class="text-xs text-zinc-300 leading-relaxed">
+                                Do primeiro contato à venda, todas as etapas geram pontuação para manter a competitividade acirrada.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Flow of points breakdown -->
+                    <div class="p-4 rounded-xl bg-gradient-to-r from-orange-950/30 to-black border border-orange-500/30 space-y-3">
+                        <h4 class="text-xs font-bold text-orange-300 uppercase tracking-wider">
+                            🚀 Filosofia do Placar Operação Última Chance
+                        </h4>
+                        <p class="text-xs text-zinc-300 leading-relaxed italic">
+                            "Mesmo quem ainda não fechou a venda continua no páreo acumulando pontos por prospecção, ligações e agendamentos. A recompensa reconhece tanto o topo quanto o fundo do funil!"
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Point Reference Table & Badges Info -->
+                <div class="space-y-6">
+                    
+                    <!-- Scoring Rules Card -->
+                    <div class="glass-card p-5 rounded-2xl border border-zinc-800 space-y-3">
+                        <h3 class="text-sm font-bold text-zinc-200 flex items-center gap-2 uppercase tracking-wider">
+                            <i class="fa-solid fa-star text-amber-400"></i> Tabela Oficial de Pontos
+                        </h3>
+                        <div class="space-y-1.5 text-xs">
+                            <div class="flex justify-between p-2 rounded-lg bg-zinc-950/60 border border-zinc-800">
+                                <span>📞 Cliente atendeu a ligação</span>
+                                <span class="font-bold text-amber-400">+1 pt</span>
+                            </div>
+                            <div class="flex justify-between p-2 rounded-lg bg-zinc-950/60 border border-zinc-800">
+                                <span>🔥 Lead antigo recuperado</span>
+                                <span class="font-bold text-amber-400">+2 pts</span>
+                            </div>
+                            <div class="flex justify-between p-2 rounded-lg bg-zinc-950/60 border border-zinc-800">
+                                <span>📅 Visita agendada</span>
+                                <span class="font-bold text-amber-400">+3 pts</span>
+                            </div>
+                            <div class="flex justify-between p-2 rounded-lg bg-zinc-950/60 border border-zinc-800">
+                                <span>📲 Presente na Live</span>
+                                <span class="font-bold text-amber-400">+3 pts</span>
+                            </div>
+                            <div class="flex justify-between p-2 rounded-lg bg-zinc-950/60 border border-zinc-800">
+                                <span>🚗 Compareceu à loja</span>
+                                <span class="font-bold text-orange-400">+5 pts</span>
+                            </div>
+                            <div class="flex justify-between p-2 rounded-lg bg-zinc-950/60 border border-zinc-800">
+                                <span>📝 Proposta realizada</span>
+                                <span class="font-bold text-orange-400">+5 pts</span>
+                            </div>
+                            <div class="flex justify-between p-2 rounded-lg bg-zinc-950/60 border border-zinc-800">
+                                <span>💰 Venda fechada</span>
+                                <span class="font-bold text-emerald-400">+10 pts</span>
+                            </div>
+                            <div class="flex justify-between p-2 rounded-lg bg-zinc-950/60 border border-zinc-800">
+                                <span>🎥 Venda originada da Live</span>
+                                <span class="font-bold text-orange-500">+15 pts</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Special Titles & Badges -->
+                    <div class="glass-card p-5 rounded-2xl border border-zinc-800 space-y-3">
+                        <h3 class="text-sm font-bold text-zinc-200 flex items-center gap-2 uppercase tracking-wider">
+                            <i class="fa-solid fa-award text-orange-400"></i> Troféus de Destaque
+                        </h3>
+                        <div class="space-y-2 text-xs">
+                            <div class="p-2.5 rounded-xl bg-zinc-950/80 border border-zinc-800 flex items-center gap-3">
+                                <div class="text-xl">🔥</div>
+                                <div>
+                                    <div class="font-bold text-amber-400">Rei do Resgate</div>
+                                    <div class="text-zinc-400">Para quem recuperar mais leads antigos de setembro</div>
+                                </div>
+                            </div>
+                            <div class="p-2.5 rounded-xl bg-zinc-950/80 border border-zinc-800 flex items-center gap-3">
+                                <div class="text-xl">📅</div>
+                                <div>
+                                    <div class="font-bold text-orange-400">Mestre da Agenda</div>
+                                    <div class="text-zinc-400">Para maior número de visitas agendadas</div>
+                                </div>
+                            </div>
+                            <div class="p-2.5 rounded-xl bg-zinc-950/80 border border-zinc-800 flex items-center gap-3">
+                                <div class="text-xl">🎯</div>
+                                <div>
+                                    <div class="font-bold text-emerald-400">Closer de Ouro</div>
+                                    <div class="text-zinc-400">Para quem fechar o maior número de vendas</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: DIA D & LIVE (01/10) -->
+        <section id="tab-diad" class="tab-content hidden space-y-6">
+            
+            <!-- Event Hero Banner -->
+            <div class="p-6 rounded-3xl bg-gradient-to-r from-orange-950/60 via-zinc-900 to-black border border-orange-500/40 shadow-2xl relative overflow-hidden">
+                <div class="absolute -right-10 -bottom-10 text-9xl opacity-10 font-black select-none text-orange-500">
+                    01/10
+                </div>
+                <div class="relative z-10 max-w-3xl space-y-3">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/40 text-xs font-bold uppercase tracking-widest">
+                        🔥 O Grande Momento da Campanha
+                    </div>
+                    <h2 class="text-2xl sm:text-4xl font-black text-white">
+                        QUINTA-FEIRA, 01 DE OUTUBRO — DIA D
+                    </h2>
+                    <p class="text-zinc-300 text-sm sm:text-base leading-relaxed">
+                        Pela manhã às <span class="font-bold text-orange-400">10h00</span>, realizamos a <span class="font-bold text-white">Live Especial Última Chance</span> apresentando veículos estratégicos com condições agressivas de fechamento. Em seguida, o comercial aborda a base inteira em ritmo acelerado!
+                    </p>
+                </div>
+            </div>
+
+            <!-- Schedule & Kickoff Goals Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <!-- Kickoff Meeting Card -->
+                <div class="glass-card p-6 rounded-2xl border border-zinc-800 space-y-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-orange-500/20 text-orange-400 flex items-center justify-center font-bold text-lg">
+                            <i class="fa-solid fa-users text-orange-400"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-white">Reunião de Matina (10 Minutos)</h3>
+                            <p class="text-xs text-zinc-400">Antes da abertura da loja na quinta-feira</p>
+                        </div>
+                    </div>
+
+                    <ul class="space-y-2.5 text-xs text-zinc-300">
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-check text-emerald-400 mt-0.5"></i>
+                            <span>Exibir o placar geral e reforçar as premiações da campanha.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-check text-emerald-400 mt-0.5"></i>
+                            <span>Apresentar os 3 a 5 veículos prioritários em oferta.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-check text-emerald-400 mt-0.5"></i>
+                            <span>Definir e transmitir a meta do dia para toda a equipe comercial.</span>
+                        </li>
+                    </ul>
+
+                    <!-- Target Flow Card -->
+                    <div class="p-4 rounded-xl bg-zinc-950 border border-orange-500/40 space-y-2">
+                        <div class="flex items-center gap-2 text-xs font-bold text-orange-400 uppercase tracking-wider">
+                            <i class="fa-solid fa-bullseye text-orange-400"></i> Definição da Meta do Dia
+                        </div>
+                        <p class="text-xs text-zinc-300 leading-relaxed">
+                            <strong class="text-white">Alinhamento Obrigatório:</strong> A liderança deve definir a meta do dia com base nos objetivos da loja e transmiti-la formalmente para toda a equipe comercial na reunião de matina, alinhando o número esperado de <span class="text-orange-400 font-semibold">Contatos, Agendamentos, Visitas Presenciais, Propostas e Vendas</span>.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Live Strategy & WhatsApp Copy -->
+                <div class="glass-card p-6 rounded-2xl border border-zinc-800 space-y-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-orange-500/20 text-orange-400 flex items-center justify-center font-bold text-lg">
+                            <i class="fa-solid fa-video text-orange-400"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-white">Transmissão ao Vivo (10h00)</h3>
+                        <div id="live-invite-text" class="p-3 bg-black rounded-xl text-xs text-zinc-300 border border-zinc-800 font-mono leading-relaxed">🔥 Tenho um convite especial para você!<br><br>Estamos nos últimos dias de setembro e preparamos uma Live Especial de Fechamento de Mês, com veículos selecionados e condições que vamos apresentar ao vivo. 🚗💥<br><br>📅 Quinta-feira, 01/10<br>⏰ Às 10h00<br><br>Se você está pensando em trocar de carro ou aproveitar uma boa oportunidade, vale a pena acompanhar! Já deixa esse horário reservado. Posso te enviar o link direto? 👊
+                        </div>
+                    </div>
+
+                    <div class="p-3.5 rounded-xl bg-orange-950/30 border border-orange-800/40 text-xs text-zinc-300 space-y-2">
+                        <div class="font-bold text-orange-300 flex items-center gap-1.5">
+                            <i class="fa-solid fa-bullhorn"></i> CTA Obrigatório Durante a Live:
+                        </div>
+                        <p class="italic text-zinc-200">
+                            "Gostou de algum carro? Chame agora no WhatsApp e fale que veio da Live para garantir sua condição exclusiva de setembro!"
+                        </p>
+                    </div>
+
+                    <div class="space-y-2 pt-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-zinc-300">Convite Padrão da Live para Clientes</span>
+                            <button onclick="copyLiveInvite()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-copy"></i> Copiar Convite
+                            </button>
+                        </div>
+                        <div id="live-invite-text" class="p-3 bg-black rounded-xl text-xs text-zinc-300 border border-zinc-800 font-mono leading-relaxed">🔥 Tenho um convite especial para você!<br><br>Estamos nos últimos dias de setembro e preparamos uma Live Especial de Fechamento de Mês, com veículos selecionados e condições que vamos apresentar ao vivo. 🚗💥<br><br>📅 Quarta-feira, 30/09<br>⏰ Às 10h00<br><br>Se você está pensando em trocar de carro ou aproveitar uma boa oportunidade, vale a pena acompanhar! Já deixa esse horário reservado. Posso te enviar o link direto? 👊
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Closing Board Template Preview for Dia D -->
+            <div class="glass-card p-6 rounded-2xl border border-zinc-800 space-y-3">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-flag-checkered text-orange-400"></i> Modelo de Publicação Interna - Fim do Dia D
+                </h3>
+                <p class="text-xs text-zinc-400">Modelo para copiar e enviar no grupo de WhatsApp no encerramento da ação:</p>
+
+                <div class="p-4 rounded-xl bg-black font-mono text-xs text-emerald-400 border border-zinc-800 space-y-1 relative">
+                    <button onclick="copyText('dia-d-summary-template')" class="absolute top-3 right-3 px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded text-[10px] font-sans">
+                        <i class="fa-solid fa-copy"></i> Copiar
+                    </button>
+                    <div id="dia-d-summary-template">🏁 **PLACAR DO DIA D — FECHAMENTO** 🏁<br>📞 Contatos efetuados: XX<br>📅 Agendamentos realizados: XX<br>🚗 Visitas presenciais: XX<br>📝 Propostas geradas: XX<br>💰 Vendas concluídas: XX<br>🏆 **Líder do Ranking:** [Nome do Vendedor]<br><br>🚀 *Ação continua firme até o último minuto! Vamos zerar o estoque!*
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- TAB 3: PLANO DE AÇÃO (4 PILARES) -->
+        <section id="tab-plano" class="tab-content hidden space-y-6">
+            
+            <!-- Régua de Comunicação (Pontos de Contato) -->
+            <div class="p-6 rounded-2xl bg-gradient-to-r from-zinc-950 via-zinc-900 to-black border border-orange-500/40 shadow-xl space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800 pb-3">
+                    <div>
+                        <span class="px-2.5 py-0.5 text-[10px] font-extrabold bg-orange-500/20 text-orange-400 rounded-full border border-orange-500/30 uppercase tracking-widest">Metodologia G30</span>
+                        <h3 class="text-xl font-black text-white mt-1 flex items-center gap-2">
+                            📱 PONTOS DE CONTATO <span class="text-orange-400 text-sm font-normal">(Régua de Comunicação em Sequência)</span>
+                        </h3>
+                    </div>
+                    <div class="px-3 py-1.5 rounded-xl bg-orange-500 text-black font-extrabold text-xs uppercase tracking-wider shadow-lg text-center">
+                        🎯 FOCO NO AGENDAMENTO DA VISITA PRESENCIAL
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-1">
+                    <div class="p-3.5 rounded-xl bg-zinc-950 border border-zinc-800 space-y-1.5 flex flex-col justify-between hover:border-orange-500/50 transition">
+                        <div class="flex items-center justify-between">
+                            <span class="w-6 h-6 rounded-full bg-orange-500/20 text-orange-400 text-xs font-bold flex items-center justify-center">1</span>
+                            <i class="fa-solid fa-phone text-orange-400"></i>
+                        </div>
+                        <div class="font-bold text-xs text-white">3 Ligações Telefônicas</div>
+                        <p class="text-[11px] text-zinc-400">Contato direto com insistência inteligente para falar com o cliente.</p>
+                    </div>
+
+                    <div class="p-3.5 rounded-xl bg-zinc-950 border border-zinc-800 space-y-1.5 flex flex-col justify-between hover:border-orange-500/50 transition">
+                        <div class="flex items-center justify-between">
+                            <span class="w-6 h-6 rounded-full bg-orange-500/20 text-orange-400 text-xs font-bold flex items-center justify-center">2</span>
+                            <i class="fa-solid fa-video text-orange-400"></i>
+                        </div>
+                        <div class="font-bold text-xs text-white">1 Vídeo Chamada</div>
+                        <p class="text-[11px] text-zinc-400">Recomendado para clientes localizados a <strong class="text-orange-300">+ de 100km</strong>.</p>
+                    </div>
+
+                    <div class="p-3.5 rounded-xl bg-zinc-950 border border-zinc-800 space-y-1.5 flex flex-col justify-between hover:border-orange-500/50 transition">
+                        <div class="flex items-center justify-between">
+                            <span class="w-6 h-6 rounded-full bg-orange-500/20 text-orange-400 text-xs font-bold flex items-center justify-center">3</span>
+                            <i class="fa-solid fa-circle-play text-orange-400"></i>
+                        </div>
+                        <div class="font-bold text-xs text-white">Envio de Vídeos Bolinha</div>
+                        <p class="text-[11px] text-zinc-400">Caso o lead <strong class="text-zinc-200">não atenda</strong> ou tenha <strong class="text-zinc-200">parado de responder</strong>.</p>
+                    </div>
+
+                    <div class="p-3.5 rounded-xl bg-zinc-950 border border-zinc-800 space-y-1.5 flex flex-col justify-between hover:border-orange-500/50 transition">
+                        <div class="flex items-center justify-between">
+                            <span class="w-6 h-6 rounded-full bg-orange-500/20 text-orange-400 text-xs font-bold flex items-center justify-center">4</span>
+                            <i class="fa-solid fa-comment text-orange-400"></i>
+                        </div>
+                        <div class="font-bold text-xs text-white">Mensagens de Texto</div>
+                        <p class="text-[11px] text-zinc-400">Texto objetivo com gatilhos de urgência e proposta clara.</p>
+                    </div>
+
+                    <div class="p-3.5 rounded-xl bg-zinc-950 border border-zinc-800 space-y-1.5 flex flex-col justify-between hover:border-orange-500/50 transition">
+                        <div class="flex items-center justify-between">
+                            <span class="w-6 h-6 rounded-full bg-orange-500/20 text-orange-400 text-xs font-bold flex items-center justify-center">5</span>
+                            <i class="fa-solid fa-microphone-slash text-orange-400"></i>
+                        </div>
+                        <div class="font-bold text-xs text-white">Áudio Mudo no WhatsApp</div>
+                        <p class="text-[11px] text-zinc-400">Estratégia para gerar curiosidade e alta taxa de resposta.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Os 4 Pilares da Campanha -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="glass-card p-5 rounded-2xl border border-zinc-800 space-y-2">
+                    <div class="flex items-center gap-2 font-bold text-orange-400 text-sm">
+                        <span class="w-6 h-6 rounded-lg bg-orange-500/20 flex items-center justify-center text-xs">1</span>
+                        Lista Quente
+                    </div>
+                    <p class="text-xs text-zinc-300 leading-relaxed">
+                        Levantar todos os leads de setembro que simularam, pediram avaliação, visitaram sem fechar, receberam proposta ou pararam de responder.
+                    </p>
+                </div>
+                <div class="glass-card p-5 rounded-2xl border border-zinc-800 space-y-2">
+                    <div class="flex items-center gap-2 font-bold text-orange-400 text-sm">
+                        <span class="w-6 h-6 rounded-lg bg-orange-500/20 flex items-center justify-center text-xs">2</span>
+                        Mutirão de Resgate
+                    </div>
+                    <p class="text-xs text-zinc-300 leading-relaxed">
+                        Abordagem direta de fechamento identificando objeções para agendar a visita presencial imediata.
+                    </p>
+                </div>
+                <div class="glass-card p-5 rounded-2xl border border-zinc-800 space-y-2">
+                    <div class="flex items-center gap-2 font-bold text-orange-400 text-sm">
+                        <span class="w-6 h-6 rounded-lg bg-orange-500/20 flex items-center justify-center text-xs">3</span>
+                        Condição Última Chance
+                    </div>
+                    <p class="text-xs text-zinc-300 leading-relaxed">
+                        3 a 5 veículos com condições especiais reais (superavaliação, documentação grátis ou bônus) até o dia 01/10.
+                    </p>
+                </div>
+                <div class="glass-card p-5 rounded-2xl border border-zinc-800 space-y-2">
+                    <div class="flex items-center gap-2 font-bold text-orange-400 text-sm">
+                        <span class="w-6 h-6 rounded-lg bg-orange-500/20 flex items-center justify-center text-xs">4</span>
+                        Pós-Ação (Segmentação)
+                    </div>
+                    <p class="text-xs text-zinc-300 leading-relaxed">
+                        Divisão dos leads não convertidos em Quentes (🟢), Mornos (🟡) e Sem Contato (🔴) para alimentar o pipeline de outubro.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Segmentação Pós-Ação -->
+            <div class="glass-card p-5 rounded-2xl border border-zinc-800 space-y-3">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-filter text-orange-400"></i> Organização do Pipeline Pós-Campanha (Dia 01)
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                    <div class="p-3.5 rounded-xl bg-zinc-950 border border-emerald-500/30 space-y-1">
+                        <div class="font-bold text-emerald-400 flex items-center gap-1.5">
+                            🟢 QUENTES
+                        </div>
+                        <p class="text-zinc-300">Visitaram, fizeram proposta ou estão negociando. Atendimento individual do vendedor.</p>
+                    </div>
+                    <div class="p-3.5 rounded-xl bg-zinc-950 border border-amber-500/30 space-y-1">
+                        <div class="font-bold text-amber-400 flex items-center gap-1.5">
+                            🟡 MORNOS
+                        </div>
+                        <p class="text-zinc-300">Conversaram mas não avançaram. Entram na cadência de relacionamento de outubro.</p>
+                    </div>
+                    <div class="p-3.5 rounded-xl bg-zinc-950 border border-rose-500/30 space-y-1">
+                        <div class="font-bold text-rose-400 flex items-center gap-1.5">
+                            🔴 SEM CONTATO
+                        </div>
+                        <p class="text-zinc-300">Não responderam às tentativas. Ficam reservados para ações futuras de reativação.</p>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- TAB 4: SCRIPTS DE ABORDAGEM -->
+        <section id="tab-scripts" class="tab-content hidden space-y-6">
+            
+            <div class="p-4 rounded-2xl bg-zinc-900/80 border border-zinc-800">
+                <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-comment-dots text-emerald-400"></i> Scripts Prontos para Abordagem e Fechamento
+                </h2>
+                <p class="text-xs text-zinc-400 mt-1">Copie com um clique e utilize nas conversas pelo WhatsApp.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <!-- Script 1: Abordagem de Resgate -->
+                <div class="glass-card p-5 rounded-2xl border border-zinc-800 space-y-3 relative">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold px-2.5 py-1 bg-amber-500/20 text-amber-300 rounded-lg border border-amber-500/30">Resgate de Lead</span>
+                        <button onclick="copyText('script-1')" class="px-3 py-1 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 rounded-lg text-xs font-semibold transition flex items-center gap-1">
+                            <i class="fa-solid fa-copy"></i> Copiar
+                        </button>
+                    </div>
+                    <h3 class="text-sm font-bold text-white">Abordagem de Quebra de Objeção</h3>
+                    <div id="script-1" class="p-3 bg-black rounded-xl text-xs text-zinc-300 border border-zinc-800 leading-relaxed font-mono">Olá, [Nome do Cliente]! Tudo bem?<br><br>Estou revisando as negociações que ficaram abertas aqui na loja neste mês de setembro e vi que não concluímos a sua do [Modelo do Veículo].<br><br>Me fala uma coisa: o que falta hoje para conseguirmos fechar esse carro para você ainda neste mês? Se for questão de taxa, entrada ou avaliação do seu usado, estou autorizada(o) a negociar diretamente com a gerência hoje.
+                    </div>
+                </div>
+
+                <!-- Script 2: Convite para Live -->
+                <div class="glass-card p-5 rounded-2xl border border-zinc-800 space-y-3 relative">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold px-2.5 py-1 bg-orange-500/20 text-orange-300 rounded-lg border border-orange-500/30">Convite Especial</span>
+                        <button onclick="copyText('script-2')" class="px-3 py-1 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 rounded-lg text-xs font-semibold transition flex items-center gap-1">
+                            <i class="fa-solid fa-copy"></i> Copiar
+                        </button>
+                    </div>
+                    <h3 class="text-sm font-bold text-white">Convite Oficial para a Live (01/10)</h3>
+                    <div id="script-2" class="p-3 bg-black rounded-xl text-xs text-zinc-300 border border-zinc-800 leading-relaxed font-mono">🔥 Tenho um convite especial para você!<br><br>Estamos no fechamento do mês e preparamos uma Live Especial, com veículos selecionados e condições que vamos apresentar ao vivo. 🚗💥<br><br>📅 Quinta-feira, 01/10<br>⏰ Às 10h00<br><br>Se você está pensando em trocar de carro ou aproveitar uma boa oportunidade, vale a pena acompanhar! Já deixa esse horário reservado. Posso te enviar o link direto? 👊
+                    </div>
+                </div>
+
+                <!-- Script 3: Abordagem Urgência Dia D -->
+                <div class="glass-card p-5 rounded-2xl border border-zinc-800 space-y-3 relative">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold px-2.5 py-1 bg-orange-500/20 text-orange-300 rounded-lg border border-orange-500/30">Quinta Dia D</span>
+                        <button onclick="copyText('script-3')" class="px-3 py-1 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 rounded-lg text-xs font-semibold transition flex items-center gap-1">
+                            <i class="fa-solid fa-copy"></i> Copiar
+                        </button>
+                    </div>
+                    <h3 class="text-sm font-bold text-white">Mensagem do Dia de Ação Final</h3>
+                    <div id="script-3" class="p-3 bg-black rounded-xl text-xs text-zinc-300 border border-zinc-800 leading-relaxed font-mono">[Nome], hoje é o DIA D da nossa Operação de Fechamento!<br><br>Separei uma condição específica para o veículo que você estava negociando com a gente. A diretoria liberou taxas e bônus de avaliação somente até o fim do dia de hoje.<br><br>Consegue passar aqui no nosso showroom hoje para conversarmos e tomarmos um café? Que horas fica melhor para você?
+                    </div>
+                </div>
+
+                <!-- Script 4: Fechamento Final (30 e 31/08) -->
+                <div class="glass-card p-5 rounded-2xl border border-zinc-800 space-y-3 relative">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold px-2.5 py-1 bg-emerald-500/20 text-emerald-300 rounded-lg border border-emerald-500/30">Últimas Horas</span>
+                        <button onclick="copyText('script-4')" class="px-3 py-1 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 rounded-lg text-xs font-semibold transition flex items-center gap-1">
+                            <i class="fa-solid fa-copy"></i> Copiar
+                        </button>
+                    </div>
+                    <h3 class="text-sm font-bold text-white">Ultimato de Fechamento (Até 01/10)</h3>
+                    <div id="script-4" class="p-3 bg-black rounded-xl text-xs text-zinc-300 border border-zinc-800 leading-relaxed font-mono">[Nome], faltam pouquíssimas horas para encerrarmos as condições especiais desta campanha de fechamento!<br><br>Estou com a sua ficha pré-aprovada na mesa da gerência. Se conseguirmos assinar até o final do expediente hoje, mantenho a condição exclusiva.<br><br>Podemos emitir a sua proposta agora?
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 space-y-2 pointer-events-none"></div>
+
+    <script>
+        // Initialize App on DOM Load
+        window.addEventListener('DOMContentLoaded', () => {
+            initCountdown();
+        });
+
+        // Tab Switcher with Safe Guards
+        function switchTab(tabId) {
+            const targetContent = document.getElementById(tabId);
+            if (!targetContent) return;
+
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            targetContent.classList.remove('hidden');
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-orange-600', 'text-white', 'shadow-lg', 'glow-orange');
+                btn.classList.add('text-zinc-400', 'hover:text-white', 'hover:bg-zinc-900');
+            });
+
+            const activeBtn = document.getElementById('btn-' + tabId);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-zinc-400', 'hover:text-white', 'hover:bg-zinc-900');
+                activeBtn.classList.add('bg-orange-600', 'text-white', 'shadow-lg', 'glow-orange');
+            }
+        }
+
+        // Countdown Timer Logic to Sept 30 Midnight
+        function initCountdown() {
+            const countdownEl = document.getElementById('countdown');
+            const now = new Date();
+            let targetYear = now.getFullYear();
+            let targetDate = new Date(targetYear, 9, 1, 23, 59, 59); // Month is 0-indexed (9 = October)
+
+            function update() {
+                const current = new Date();
+                const diff = targetDate - current;
+
+                if (diff <= 0) {
+                    countdownEl.innerText = "00d 00h 00m 00s";
+                    return;
+                }
+
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                countdownEl.innerText = 
+                    `${String(days).padStart(2, '0')}d ${String(hours).padStart(2, '0')}h ${String(minutes).padStart(2, '0')}m ${String(seconds).padStart(2, '0')}s`;
+            }
+
+            update();
+            setInterval(update, 1000);
+        }
+
+        // Live Convite generator
+        function copyLiveInvite() {
+            const text = `🔥 Tenho um convite especial para você!
+
+Estamos nos últimos dias de setembro e preparamos uma Live Especial de Fechamento de Mês, com veículos selecionados e condições que vamos apresentar ao vivo. 🚗💥
+
+📅 Quinta-feira, 01/10
+⏰ Às 10h00
+
+Se você está pensando em trocar de carro ou aproveitar uma boa oportunidade, vale a pena acompanhar! Já deixa esse horário reservado. Posso te enviar o link direto? 👊`;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Convite da Live copiado para a área de transferência!', 'success');
+            }).catch(() => {
+                const el = document.createElement('textarea');
+                el.value = text;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+                showToast('Convite copiado com sucesso!', 'success');
+            });
+        }
+
+        // Text Copy Utility
+        function copyText(elementId) {
+            const text = document.getElementById(elementId).innerText;
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showToast('Texto copiado com sucesso!', 'success');
+            } catch (err) {
+                showToast('Erro ao copiar texto.', 'error');
+            }
+            document.body.removeChild(textarea);
+        }
+
+        // Toast Feedback System
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+
+            let bg = 'bg-zinc-900 border-zinc-800 text-zinc-200';
+            if (type === 'success') bg = 'bg-emerald-950 border-emerald-700 text-emerald-200';
+            if (type === 'error') bg = 'bg-orange-950 border-orange-700 text-orange-200';
+
+            toast.className = `p-3 rounded-xl border ${bg} text-xs font-bold shadow-xl flex items-center gap-2 pointer-events-auto transition duration-300 opacity-0 transform translate-y-2`;
+            toast.innerHTML = `<i class="fa-solid fa-circle-check text-orange-400"></i> ${message}`;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-0', 'translate-y-2');
+            }, 50);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
